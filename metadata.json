@@ -1,0 +1,7 @@
+{
+  "name": "JagaDoku - Asisten Finansial AI",
+  "description": "Aplikasi manajemen keuangan pribadi yang membantu Anda melacak pengeluaran, pemasukan, dan memberikan saran investasi serta strategi menabung menggunakan kecerdasan buatan Gemini.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
