@@ -13,8 +13,12 @@ declare const google: any;
 
 const App: React.FC = () => {
   const [user, setUser] = useState<GoogleUser | null>(() => {
-    const saved = localStorage.getItem('cerdas_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('cerdas_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
   });
   
   const [currentTab, setCurrentTab] = useState<AppTab>(AppTab.DASHBOARD);
@@ -22,13 +26,21 @@ const App: React.FC = () => {
   const [filterDate, setFilterDate] = useState<string>('');
   
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem('cerdas_transactions');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('cerdas_transactions');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
   });
 
   const [goals, setGoals] = useState<SavingsGoal[]>(() => {
-    const saved = localStorage.getItem('cerdas_goals');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('cerdas_goals');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
   });
 
   const filteredTransactions = useMemo(() => {
@@ -39,13 +51,16 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('cerdas_transactions', JSON.stringify(transactions));
     localStorage.setItem('cerdas_goals', JSON.stringify(goals));
-    if (user) localStorage.setItem('cerdas_user', JSON.stringify(user));
-    else localStorage.removeItem('cerdas_user');
+    if (user) {
+      localStorage.setItem('cerdas_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('cerdas_user');
+    }
   }, [transactions, goals, user]);
 
   const handleLogin = () => {
     if (typeof google === 'undefined' || !google.accounts) {
-      alert("Layanan Google sedang dimuat. Silakan tunggu sebentar atau refresh halaman.");
+      alert("Layanan Google sedang dimuat. Silakan tunggu 3 detik lalu coba lagi.");
       return;
     }
 
@@ -65,7 +80,7 @@ const App: React.FC = () => {
               try {
                 spreadsheetId = await createUserSpreadsheet(response.access_token);
               } catch (err) {
-                console.error(err);
+                console.error("Gagal membuat spreadsheet:", err);
               }
             }
 
@@ -83,7 +98,7 @@ const App: React.FC = () => {
       client.requestAccessToken();
     } catch (e) {
       console.error("Auth error:", e);
-      alert("Terjadi kesalahan saat menghubungkan ke Google. Silakan coba Mode Tamu.");
+      alert("Gagal memuat jendela login Google. Pastikan pop-up diizinkan.");
     }
   };
 
@@ -108,7 +123,7 @@ const App: React.FC = () => {
   const handleSync = async () => {
     if (!user || user.isGuest) return;
     if (!user.spreadsheetId) {
-      alert("Spreadsheet ID tidak ditemukan. Coba re-konek Google.");
+      alert("Spreadsheet ID tidak ditemukan. Harap login ulang.");
       return;
     }
 
@@ -242,7 +257,7 @@ const App: React.FC = () => {
     >
       <div className="mb-6 flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
         <div className="flex items-center gap-4">
-          <img src={user.picture} className="w-12 h-12 rounded-2xl border-2 border-emerald-100" alt="Profile" />
+          <img src={user.picture} className="w-12 h-12 rounded-2xl border-2 border-emerald-100" alt="Profile" referrerPolicy="no-referrer" />
           <div>
             <p className="text-sm font-bold text-slate-800 leading-tight">{user.name}</p>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{user.isGuest ? 'Mode Offline' : 'Terhubung Cloud'}</p>
