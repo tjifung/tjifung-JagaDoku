@@ -49,18 +49,22 @@ const App: React.FC = () => {
   }, [transactions, filterDate]);
 
   useEffect(() => {
-    localStorage.setItem('cerdas_transactions', JSON.stringify(transactions));
-    localStorage.setItem('cerdas_goals', JSON.stringify(goals));
-    if (user) {
-      localStorage.setItem('cerdas_user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('cerdas_user');
+    try {
+      localStorage.setItem('cerdas_transactions', JSON.stringify(transactions));
+      localStorage.setItem('cerdas_goals', JSON.stringify(goals));
+      if (user) {
+        localStorage.setItem('cerdas_user', JSON.stringify(user));
+      } else {
+        localStorage.removeItem('cerdas_user');
+      }
+    } catch (e) {
+      console.error("Storage error:", e);
     }
   }, [transactions, goals, user]);
 
   const handleLogin = () => {
     if (typeof google === 'undefined' || !google.accounts) {
-      alert("Layanan Google sedang dimuat. Silakan tunggu 3 detik lalu coba lagi.");
+      alert("Layanan Google sedang dimuat. Silakan tunggu sebentar lalu coba lagi.");
       return;
     }
 
@@ -80,7 +84,7 @@ const App: React.FC = () => {
               try {
                 spreadsheetId = await createUserSpreadsheet(response.access_token);
               } catch (err) {
-                console.error("Gagal membuat spreadsheet:", err);
+                console.error("Spreadsheet error:", err);
               }
             }
 
@@ -98,7 +102,7 @@ const App: React.FC = () => {
       client.requestAccessToken();
     } catch (e) {
       console.error("Auth error:", e);
-      alert("Gagal memuat jendela login Google. Pastikan pop-up diizinkan.");
+      alert("Gagal memuat login. Pastikan koneksi stabil.");
     }
   };
 
@@ -123,17 +127,16 @@ const App: React.FC = () => {
   const handleSync = async () => {
     if (!user || user.isGuest) return;
     if (!user.spreadsheetId) {
-      alert("Spreadsheet ID tidak ditemukan. Harap login ulang.");
+      alert("Spreadsheet tidak ditemukan.");
       return;
     }
 
     setIsSyncing(true);
     try {
       await syncToGoogleSheets(user.accessToken, user.spreadsheetId, { transactions, goals });
-      alert("Sinkronisasi Berhasil ke Google Sheets!");
+      alert("Data berhasil tersimpan di Google Sheets!");
     } catch (err) {
-      alert("Sesi berakhir atau terjadi kesalahan. Silakan login ulang.");
-      handleLogin();
+      alert("Gagal sinkronisasi. Sesi mungkin berakhir.");
     } finally {
       setIsSyncing(false);
     }
@@ -167,12 +170,6 @@ const App: React.FC = () => {
               Mulai sebagai Tamu (Offline)
             </button>
           </div>
-
-          <div className="pt-4 border-t border-slate-50">
-             <p className="text-[10px] text-slate-400 font-medium leading-relaxed uppercase tracking-wider">
-               Data tersimpan lokal di peramban pada mode tamu
-             </p>
-          </div>
         </div>
       </div>
     );
@@ -180,8 +177,7 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     switch (currentTab) {
-      case AppTab.DASHBOARD:
-        return <Dashboard transactions={transactions} />;
+      case AppTab.DASHBOARD: return <Dashboard transactions={transactions} />;
       case AppTab.TRANSACTIONS:
         return (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -195,54 +191,37 @@ const App: React.FC = () => {
                   type="date" 
                   value={filterDate}
                   onChange={(e) => setFilterDate(e.target.value)}
-                  className="w-full sm:w-48 px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
+                  className="w-full sm:w-48 px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none"
                 />
               </div>
-
               <div className="space-y-3">
                 {filteredTransactions.map(t => (
-                  <div key={t.id} className="bg-white p-4 rounded-2xl border border-slate-100 flex justify-between items-center group hover:border-emerald-200 transition-all">
+                  <div key={t.id} className="bg-white p-4 rounded-2xl border border-slate-100 flex justify-between items-center group">
                     <div className="flex gap-4 items-center">
                       <div className={`p-3 rounded-xl text-xl ${t.type === 'INCOME' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
                          {t.type === 'INCOME' ? '💰' : '🛒'}
                       </div>
                       <div>
                         <p className="font-bold text-slate-800 leading-tight">{t.description}</p>
-                        <p className="text-xs text-slate-400 font-medium mt-1">
-                          {t.category} • {new Date(t.date).toLocaleDateString('id-ID')}
-                        </p>
+                        <p className="text-xs text-slate-400 mt-1">{t.category} • {new Date(t.date).toLocaleDateString('id-ID')}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
                       <p className={`font-bold text-lg ${t.type === 'INCOME' ? 'text-emerald-600' : 'text-red-600'}`}>
                         {t.type === 'INCOME' ? '+' : '-'}{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(t.amount)}
                       </p>
-                      <button 
-                        onClick={() => setTransactions(prev => prev.filter(item => item.id !== t.id))}
-                        className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-red-500 transition-all"
-                      >
-                        🗑️
-                      </button>
+                      <button onClick={() => setTransactions(prev => prev.filter(item => item.id !== t.id))} className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-red-500">🗑️</button>
                     </div>
                   </div>
                 ))}
-                {filteredTransactions.length === 0 && (
-                  <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400">
-                    Tidak ada transaksi ditemukan.
-                  </div>
-                )}
               </div>
             </div>
           </div>
         );
-      case AppTab.SAVINGS:
-        return <SavingsManager goals={goals} onAddGoal={(g) => setGoals(prev => [...prev, g])} onUpdateGoal={(id, amount) => setGoals(prev => prev.map(g => g.id === id ? { ...g, currentAmount: g.currentAmount + amount } : g))} />;
-      case AppTab.INVESTMENT:
-        return <InvestmentSimulator />;
-      case AppTab.AI_ADVISOR:
-        return <AIAdvisor transactions={transactions} goals={goals} />;
-      default:
-        return <Dashboard transactions={transactions} />;
+      case AppTab.SAVINGS: return <SavingsManager goals={goals} onAddGoal={(g) => setGoals(prev => [...prev, g])} onUpdateGoal={(id, amount) => setGoals(prev => prev.map(g => g.id === id ? { ...g, currentAmount: g.currentAmount + amount } : g))} />;
+      case AppTab.INVESTMENT: return <InvestmentSimulator />;
+      case AppTab.AI_ADVISOR: return <AIAdvisor transactions={transactions} goals={goals} />;
+      default: return <Dashboard transactions={transactions} />;
     }
   };
 
@@ -263,7 +242,7 @@ const App: React.FC = () => {
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{user.isGuest ? 'Mode Offline' : 'Terhubung Cloud'}</p>
           </div>
         </div>
-        <button onClick={handleLogout} className="px-5 py-2 text-xs font-bold text-red-500 hover:bg-red-50 rounded-2xl transition-all border border-transparent hover:border-red-100">Logout</button>
+        <button onClick={handleLogout} className="px-5 py-2 text-xs font-bold text-red-500 hover:bg-red-50 rounded-2xl transition-all">Logout</button>
       </div>
       {renderContent()}
     </Layout>
