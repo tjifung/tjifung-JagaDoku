@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Transaction, SavingsGoal, AppTab, GoogleUser } from './types';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
@@ -44,6 +44,11 @@ const App: React.FC = () => {
   }, [transactions, goals, user]);
 
   const handleLogin = () => {
+    if (typeof google === 'undefined' || !google.accounts) {
+      alert("Layanan Google sedang dimuat. Silakan tunggu sebentar atau refresh halaman.");
+      return;
+    }
+
     try {
       const client = google.accounts.oauth2.initTokenClient({
         client_id: "800826886908-fp17il9ob94g0l1nc4mc0ifq2bh059t2.apps.googleusercontent.com", 
@@ -77,7 +82,8 @@ const App: React.FC = () => {
       });
       client.requestAccessToken();
     } catch (e) {
-      alert("Error inisialisasi Google Auth. Silakan gunakan Mode Tamu.");
+      console.error("Auth error:", e);
+      alert("Terjadi kesalahan saat menghubungkan ke Google. Silakan coba Mode Tamu.");
     }
   };
 
@@ -102,16 +108,16 @@ const App: React.FC = () => {
   const handleSync = async () => {
     if (!user || user.isGuest) return;
     if (!user.spreadsheetId) {
-      alert("Spreadsheet ID tidak ditemukan.");
+      alert("Spreadsheet ID tidak ditemukan. Coba re-konek Google.");
       return;
     }
 
     setIsSyncing(true);
     try {
       await syncToGoogleSheets(user.accessToken, user.spreadsheetId, { transactions, goals });
-      alert("Sinkronisasi Berhasil!");
+      alert("Sinkronisasi Berhasil ke Google Sheets!");
     } catch (err) {
-      alert("Sesi berakhir. Silakan re-konek.");
+      alert("Sesi berakhir atau terjadi kesalahan. Silakan login ulang.");
       handleLogin();
     } finally {
       setIsSyncing(false);
@@ -148,8 +154,8 @@ const App: React.FC = () => {
           </div>
 
           <div className="pt-4 border-t border-slate-50">
-             <p className="text-[10px] text-slate-400 font-medium leading-relaxed">
-               Dengan Mode Tamu, data Anda disimpan secara lokal di peramban ini dan tidak akan disinkronkan ke cloud.
+             <p className="text-[10px] text-slate-400 font-medium leading-relaxed uppercase tracking-wider">
+               Data tersimpan lokal di peramban pada mode tamu
              </p>
           </div>
         </div>
@@ -205,6 +211,11 @@ const App: React.FC = () => {
                     </div>
                   </div>
                 ))}
+                {filteredTransactions.length === 0 && (
+                  <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-200 text-slate-400">
+                    Tidak ada transaksi ditemukan.
+                  </div>
+                )}
               </div>
             </div>
           </div>
