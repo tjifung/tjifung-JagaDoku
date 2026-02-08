@@ -2,7 +2,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Transaction, SavingsGoal, AIInsight } from "../types";
 
-// Fix: Use process.env.API_KEY directly as required by guidelines
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const insightSchema = {
@@ -10,12 +9,12 @@ const insightSchema = {
   properties: {
     summary: {
       type: Type.STRING,
-      description: "Ringkasan kondisi keuangan pengguna saat ini.",
+      description: "Ringkasan mendalam tentang kesehatan keuangan pengguna saat ini.",
     },
     savingTips: {
       type: Type.ARRAY,
       items: { type: Type.STRING },
-      description: "Tips spesifik untuk menabung berdasarkan pola pengeluaran.",
+      description: "Strategi spesifik menabung (seperti 50/30/20) dan efisiensi biaya.",
     },
     investmentAdvice: {
       type: Type.ARRAY,
@@ -28,7 +27,7 @@ const insightSchema = {
         },
         required: ["instrument", "description", "riskLevel"],
       },
-      description: "Rekomendasi instrumen investasi yang cocok.",
+      description: "Rekomendasi instrumen investasi yang dipersonalisasi.",
     },
   },
   required: ["summary", "savingTips", "investmentAdvice"],
@@ -38,22 +37,24 @@ export const getFinancialAdvice = async (
   transactions: Transaction[],
   goals: SavingsGoal[]
 ): Promise<AIInsight> => {
-  // Fix: Use gemini-3-pro-preview for complex reasoning and financial advice tasks
   const model = "gemini-3-pro-preview";
   
   const prompt = `
-    Analisis data keuangan berikut dan berikan saran finansial profesional dalam Bahasa Indonesia.
+    Anda adalah penasihat keuangan (Financial Planner) bersertifikat. 
+    Analisis data keuangan berikut dan berikan strategi "Wealth Management" dalam Bahasa Indonesia yang formal namun mudah dimengerti.
     
-    Data Transaksi:
+    Data Transaksi (Input):
     ${JSON.stringify(transactions)}
     
-    Tujuan Menabung:
+    Target Tabungan:
     ${JSON.stringify(goals)}
     
-    Tugas Anda:
-    1. Berikan ringkasan singkat tentang kesehatan keuangan.
-    2. Berikan 3-5 tips praktis menabung berdasarkan pengeluaran terbesar.
-    3. Rekomendasikan 2-3 instrumen investasi (seperti Reksadana, Saham, atau Emas) yang sesuai dengan surplus bulanan mereka.
+    Instruksi Khusus:
+    1. Identifikasi surplus bulanan (Pemasukan dikurangi Pengeluaran).
+    2. Jika ada surplus, sarankan alokasi investasi ke instrumen seperti Reksadana Indeks, Obligasi, atau Emas.
+    3. Jika ada defisit atau surplus kecil, berikan tips hemat ekstrem pada kategori pengeluaran terbesar.
+    4. Berikan saran spesifik mengenai "Dana Darurat" (Emergency Fund).
+    5. Gunakan perspektif jangka panjang (5-10 tahun ke depan).
   `;
 
   try {
@@ -66,7 +67,6 @@ export const getFinancialAdvice = async (
       },
     });
 
-    // Fix: Access .text property directly
     const text = response.text;
     if (!text) throw new Error("No response from AI");
     return JSON.parse(text) as AIInsight;

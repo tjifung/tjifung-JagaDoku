@@ -34,11 +34,13 @@ export interface GoogleUser {
   picture: string;
   accessToken: string;
   spreadsheetId: string | null;
+  isGuest?: boolean;
 }
 
 export enum AppTab {
   DASHBOARD = 'dashboard',
   TRANSACTIONS = 'transactions',
   SAVINGS = 'savings',
+  INVESTMENT = 'investment',
   AI_ADVISOR = 'ai_advisor'
 }

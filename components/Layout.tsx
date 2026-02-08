@@ -8,14 +8,16 @@ interface LayoutProps {
   onOpenSettings: () => void;
   isSyncing: boolean;
   onSync: () => void;
+  isGuest: boolean;
   children: React.ReactNode;
 }
 
-const Layout: React.FC<LayoutProps> = ({ currentTab, setCurrentTab, onOpenSettings, isSyncing, onSync, children }) => {
+const Layout: React.FC<LayoutProps> = ({ currentTab, setCurrentTab, onOpenSettings, isSyncing, onSync, isGuest, children }) => {
   const tabs = [
     { id: AppTab.DASHBOARD, label: 'Dashboard', icon: '📊' },
     { id: AppTab.TRANSACTIONS, label: 'Transaksi', icon: '💸' },
     { id: AppTab.SAVINGS, label: 'Tabungan', icon: '🏦' },
+    { id: AppTab.INVESTMENT, label: 'Investasi', icon: '📈' },
     { id: AppTab.AI_ADVISOR, label: 'AI Advisor', icon: '🤖' },
   ];
 
@@ -45,12 +47,18 @@ const Layout: React.FC<LayoutProps> = ({ currentTab, setCurrentTab, onOpenSettin
           ))}
         </nav>
         <div className="p-4 border-t border-slate-100">
-          <button 
-            onClick={onOpenSettings}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition-all text-xs"
-          >
-            <span>🔄</span> Refresh Koneksi Google
-          </button>
+          {!isGuest ? (
+            <button 
+              onClick={onOpenSettings}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition-all text-xs"
+            >
+              <span>🔄</span> Re-konek Google
+            </button>
+          ) : (
+            <div className="px-4 py-3 text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center">
+              Mode Tamu (Lokal)
+            </div>
+          )}
         </div>
       </aside>
 
@@ -61,16 +69,18 @@ const Layout: React.FC<LayoutProps> = ({ currentTab, setCurrentTab, onOpenSettin
             {currentTab.replace('_', ' ')}
           </h2>
           <div className="flex items-center gap-4">
-             <button 
-                onClick={onSync}
-                disabled={isSyncing}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                  isSyncing ? 'bg-slate-100 text-slate-400' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-200'
-                }`}
-             >
-                <span className={isSyncing ? 'animate-spin' : ''}>{isSyncing ? '⏳' : '🚀'}</span>
-                {isSyncing ? 'Menyinkronkan...' : 'Sync ke Cloud'}
-             </button>
+             {!isGuest && (
+               <button 
+                  onClick={onSync}
+                  disabled={isSyncing}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                    isSyncing ? 'bg-slate-100 text-slate-400' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-200'
+                  }`}
+               >
+                  <span className={isSyncing ? 'animate-spin' : ''}>{isSyncing ? '⏳' : '🚀'}</span>
+                  {isSyncing ? 'Sync ke Cloud' : 'Simpan ke Sheet'}
+               </button>
+             )}
           </div>
         </header>
         <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
