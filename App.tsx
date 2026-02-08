@@ -58,13 +58,13 @@ const App: React.FC = () => {
         localStorage.removeItem('cerdas_user');
       }
     } catch (e) {
-      console.error("Storage error:", e);
+      console.error("Storage Error:", e);
     }
   }, [transactions, goals, user]);
 
   const handleLogin = () => {
     if (typeof google === 'undefined' || !google.accounts) {
-      alert("Layanan Google sedang dimuat. Silakan tunggu sebentar lalu coba lagi.");
+      alert("Layanan Google sedang dimuat. Silakan tunggu 3 detik lalu klik lagi.");
       return;
     }
 
@@ -84,7 +84,7 @@ const App: React.FC = () => {
               try {
                 spreadsheetId = await createUserSpreadsheet(response.access_token);
               } catch (err) {
-                console.error("Spreadsheet error:", err);
+                console.error("Sheet Error:", err);
               }
             }
 
@@ -101,8 +101,8 @@ const App: React.FC = () => {
       });
       client.requestAccessToken();
     } catch (e) {
-      console.error("Auth error:", e);
-      alert("Gagal memuat login. Pastikan koneksi stabil.");
+      console.error("Login Error:", e);
+      alert("Terjadi kesalahan saat memuat Google Login.");
     }
   };
 
@@ -127,16 +127,16 @@ const App: React.FC = () => {
   const handleSync = async () => {
     if (!user || user.isGuest) return;
     if (!user.spreadsheetId) {
-      alert("Spreadsheet tidak ditemukan.");
+      alert("ID Spreadsheet tidak ditemukan. Coba login ulang.");
       return;
     }
 
     setIsSyncing(true);
     try {
       await syncToGoogleSheets(user.accessToken, user.spreadsheetId, { transactions, goals });
-      alert("Data berhasil tersimpan di Google Sheets!");
+      alert("Data berhasil tersinkronisasi ke Google Sheets!");
     } catch (err) {
-      alert("Gagal sinkronisasi. Sesi mungkin berakhir.");
+      alert("Sinkronisasi gagal. Pastikan koneksi stabil.");
     } finally {
       setIsSyncing(false);
     }
@@ -167,7 +167,7 @@ const App: React.FC = () => {
               onClick={startAsGuest}
               className="w-full py-4 bg-white border-2 border-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-50 transition-all"
             >
-              Mulai sebagai Tamu (Offline)
+              Mulai sebagai Tamu (Lokal)
             </button>
           </div>
         </div>
@@ -191,12 +191,12 @@ const App: React.FC = () => {
                   type="date" 
                   value={filterDate}
                   onChange={(e) => setFilterDate(e.target.value)}
-                  className="w-full sm:w-48 px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                  className="w-full sm:w-48 px-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
               <div className="space-y-3">
                 {filteredTransactions.map(t => (
-                  <div key={t.id} className="bg-white p-4 rounded-2xl border border-slate-100 flex justify-between items-center group">
+                  <div key={t.id} className="bg-white p-4 rounded-2xl border border-slate-100 flex justify-between items-center group hover:border-emerald-200 transition-all">
                     <div className="flex gap-4 items-center">
                       <div className={`p-3 rounded-xl text-xl ${t.type === 'INCOME' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
                          {t.type === 'INCOME' ? '💰' : '🛒'}
@@ -210,10 +210,11 @@ const App: React.FC = () => {
                       <p className={`font-bold text-lg ${t.type === 'INCOME' ? 'text-emerald-600' : 'text-red-600'}`}>
                         {t.type === 'INCOME' ? '+' : '-'}{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(t.amount)}
                       </p>
-                      <button onClick={() => setTransactions(prev => prev.filter(item => item.id !== t.id))} className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-red-500">🗑️</button>
+                      <button onClick={() => setTransactions(prev => prev.filter(item => item.id !== t.id))} className="opacity-0 group-hover:opacity-100 p-2 text-slate-300 hover:text-red-500 transition-all">🗑️</button>
                     </div>
                   </div>
                 ))}
+                {filteredTransactions.length === 0 && <div className="text-center py-10 text-slate-400 italic">Belum ada data untuk tanggal ini.</div>}
               </div>
             </div>
           </div>
@@ -236,13 +237,13 @@ const App: React.FC = () => {
     >
       <div className="mb-6 flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
         <div className="flex items-center gap-4">
-          <img src={user.picture} className="w-12 h-12 rounded-2xl border-2 border-emerald-100" alt="Profile" referrerPolicy="no-referrer" />
+          <img src={user.picture} className="w-12 h-12 rounded-2xl border-2 border-emerald-100 shadow-sm" alt="Profile" referrerPolicy="no-referrer" />
           <div>
             <p className="text-sm font-bold text-slate-800 leading-tight">{user.name}</p>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{user.isGuest ? 'Mode Offline' : 'Terhubung Cloud'}</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{user.isGuest ? 'Mode Tamu' : 'Sinkronisasi Aktif'}</p>
           </div>
         </div>
-        <button onClick={handleLogout} className="px-5 py-2 text-xs font-bold text-red-500 hover:bg-red-50 rounded-2xl transition-all">Logout</button>
+        <button onClick={handleLogout} className="px-5 py-2 text-xs font-bold text-red-500 hover:bg-red-50 rounded-2xl transition-all border border-transparent hover:border-red-100">Logout</button>
       </div>
       {renderContent()}
     </Layout>
